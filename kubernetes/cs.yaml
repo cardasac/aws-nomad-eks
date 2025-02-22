@@ -1,0 +1,17 @@
+# Contains values that affect multiple components of the chart.
+global:
+  enabled: true
+  name: consul
+  datacenter: eu-west-1
+  acls:
+    manageSystemACLs: true
+server:
+  enabled: true
+  replicas: 3
+  storageClass: gp2
+connectInject:
+  enabled: false
+dns:
+  enabled: false
+client:
+  enabled: true

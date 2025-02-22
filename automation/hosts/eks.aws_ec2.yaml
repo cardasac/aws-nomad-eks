@@ -1,0 +1,14 @@
+plugin: amazon.aws.aws_ec2
+regions:
+  - eu-west-1
+hostnames:
+  - tag:Name
+  - private-ip-address
+filters:
+  tag:Name: k6-eks
+cache: true
+cache_connection: /tmp/aws_inventory
+cache_prefix: aws_ec2
+
+compose:
+  ansible_host: instance_id

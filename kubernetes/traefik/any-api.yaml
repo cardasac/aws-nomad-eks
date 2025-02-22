@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: any-apy
+  labels:
+    app: any-apy
+    name: any-apy
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: any-apy
+      task: any-apy
+  template:
+    metadata:
+      labels:
+        app: any-apy
+        task: any-apy
+    spec:
+      containers:
+        - name: any-apy
+          image: <image>
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: ""
+              memory: ""
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: any-apy
+  labels:
+    app: any-apy
+    task: any-apy
+
+spec:
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+  selector:
+    app: any-apy
+    task: any-apy

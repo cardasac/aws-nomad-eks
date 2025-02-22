@@ -1,0 +1,62 @@
+---
+- name: Set files
+  hosts: 127.0.0.1
+  become: true
+  tags: files
+  gather_facts: false
+  vars:
+    consul_template_config_dir: /etc/consul-template.d
+    consul_template_dir: /opt/consul-template
+  tasks:
+    - name: Create directory /ops/shared with parents
+      ansible.builtin.file:
+        path: /ops/shared
+        state: directory
+        mode: "0755"
+    - name: Set recursive permissions on /ops directory (caution advised)
+      ansible.builtin.file:
+        path: /ops
+        mode: "0777"
+        recurse: true
+    - name: Create Consul config template directory
+      ansible.builtin.file:
+        path: "{{ consul_template_config_dir }}"
+        state: directory
+        mode: "0755"
+    - name: Create Consul template directory
+      ansible.builtin.file:
+        path: "{{ consul_template_dir }}"
+        state: directory
+        mode: "0755"
+
+- name: Setup packages and services
+  hosts: 127.0.0.1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Install the latest version of Nomad, Consul, Vault, Dmidecode and Docker
+      ansible.builtin.package:
+        name:
+          - nomad
+          - consul
+          - consul-template
+          - vault
+          - docker
+          - dmidecode
+          - amazon-ecr-credential-helper
+        state: present
+    - name: Enable docker service
+      ansible.builtin.systemd_service:
+        name: docker.service
+        enabled: true
+        masked: false
+    - name: Enable containerd service
+      ansible.builtin.systemd_service:
+        name: containerd.service
+        enabled: true
+        masked: false
+    - name: Add ec2-user to docker group
+      ansible.builtin.user:
+        name: ec2-user
+        groups: docker
+        append: true

@@ -1,0 +1,47 @@
+logging {
+	level  = "info"
+	format = "logfmt"
+}
+
+prometheus.remote_write "default" {
+	endpoint {
+		url = ""
+
+		basic_auth {
+			username = ""
+			password = sys.env("GCLOUD_RW_API_KEY")
+		}
+	}
+	external_labels = {
+		orchestration = "nomad",
+		cluster       = "production",
+		namespace     = "default",
+	}
+}
+
+prometheus.exporter.unix "default" {
+	set_collectors = ["cpu", "meminfo"]
+}
+
+prometheus.scrape "default" {
+	targets    = prometheus.exporter.unix.default.targets
+	forward_to = [prometheus.remote_write.default.receiver]
+}
+
+discovery.consul "consul" {
+	server   = "localhost:8500"
+	services = [
+		"nomad",
+		"nomad-client",
+	]
+}
+
+prometheus.scrape "consul" {
+	clustering {
+		enabled = true
+	}
+	targets      = discovery.consul.consul.targets
+	forward_to   = [prometheus.remote_write.default.receiver]
+	params       = {"format" = ["prometheus"]}
+	metrics_path = "/v1/metrics"
+}

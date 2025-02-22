@@ -1,0 +1,36 @@
+- name: Execute k6 test
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    ansible_connection: aws_ssm
+    ansible_aws_ssm_bucket_name: ""
+    ansible_aws_ssm_region: eu-west-1
+    ansible_aws_ssm_timeout: 3000
+  tasks:
+    - name: Unarchive k6 and move to bin
+      ansible.builtin.unarchive:
+        src: https://github.com/grafana/k6/releases/download/v0.54.0/k6-v0.54.0-linux-arm64.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts: ["--strip-components=1", "--show-stored-names"]
+    - name: Copy k6 script to ec2-user home directory
+      ansible.builtin.copy:
+        src: k6.js
+        dest: /home/ec2-user/k6.js
+        mode: "0640"
+    - name: Execute test
+      ansible.builtin.command: /usr/local/bin/k6 run --quiet -o experimental-prometheus-rw --tag testid=$TEST_ID -e HOST=$HOST --tag orchestration=$ORCHESTRATION /home/ec2-user/k6.js
+      environment:
+        TEST_ID: "{{ TEST_ID }}"
+        HOST: "{{ HOST }}"
+        ORCHESTRATION: "{{ ORCHESTRATION }}"
+        K6_PROMETHEUS_RW_USERNAME: ""
+        K6_PROMETHEUS_RW_PASSWORD: "{{ GRAFANA_TOKEN }}"
+        K6_PROMETHEUS_RW_SERVER_URL: ""
+        K6_PROMETHEUS_RW_TREND_STATS: "p(95),p(99),count,sum,min,max,avg,med"
+        K6_PROMETHEUS_RW_STALE_MARKERS: "true"
+      args:
+        chdir: /home/ec2-user
+      register: k6_output
+      changed_when: k6_output.rc != 0
